@@ -1,27 +1,23 @@
-from network_utils import get_local_ip, get_scan_range
-from scanner import network_scan, arp_scan
-
-# ANSI color codes
-RED = "\033[91m"
-RESET = "\033[0m"
+from scanner import scan
+from device_info import arp_scan
+import datetime
 
 def main():
-    """Main execution flow."""
-    local_ip = get_local_ip()
-    if not local_ip:
-        print(f"{RED}[ERROR] Could not determine local IP. Exiting.{RESET}")
-        return
+    print("Starting network scan...\n")
+    
+    active_hosts = scan()
+    arp_devices = arp_scan()
 
-    scan_ranges = get_scan_range(local_ip)
-    if not scan_ranges:
-        print(f"[ERROR] Unsupported local IP range: {local_ip}. Exiting.")
-        return
+    print("\nActive Hosts Found:")
+    print("---------------------------------")
+    for host in active_hosts:
+        print(f"IP: {host}")
 
-    # Perform network scan using ping
-    network_scan(scan_ranges)
-
-    # Perform ARP scan to detect connected devices
-    arp_scan()
+    print("\nConnected Devices (From ARP Scan):")
+    print("---------------------------------")
+    for device in arp_devices:
+        connection_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(f"IP: {device['ip']}, MAC: {device['mac']}, Connected at: {connection_time}")
 
 if __name__ == "__main__":
     main()

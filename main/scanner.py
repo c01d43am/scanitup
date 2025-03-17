@@ -1,13 +1,7 @@
 import platform
 import subprocess
 import concurrent.futures
-import re
-
-# ANSI color codes
-RED = "\033[91m"
-GREEN = "\033[92m"
-CYAN = "\033[96m"
-RESET = "\033[0m"
+from network_utils import get_local_ip, get_scan_range
 
 def ping(ip):
     """Ping an IP address to check if it's live."""
@@ -15,44 +9,22 @@ def ping(ip):
         cmd = ["ping", "-c", "1", "-W", "0.5", ip] if platform.system() != "Windows" else ["ping", "-n", "1", "-w", "500", ip]
         result = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         if result.returncode == 0:
-            print(f"{GREEN}[LIVE] {ip}{RESET}")
             return ip
-    except Exception as e:
-        print(f"{RED}Error pinging {ip}: {e}{RESET}")
+    except:
+        pass
     return None
 
-def arp_scan():
-    """Retrieve all IP and MAC addresses of connected devices using ARP."""
-    print("\n[INFO] Running ARP scan to detect all connected devices...\n")
-    devices = []
-    try:
-        if platform.system() == "Windows":
-            cmd = ["arp", "-a"]
-            result = subprocess.run(cmd, capture_output=True, text=True)
-            pattern = re.findall(r"(\d+\.\d+\.\d+\.\d+)\s+([a-fA-F0-9:-]+)", result.stdout)
-        else:
-            cmd = ["ip", "neigh"]
-            result = subprocess.run(cmd, capture_output=True, text=True)
-            pattern = re.findall(r"(\d+\.\d+\.\d+\.\d+)\s+.*\s+([a-fA-F0-9:-]+)", result.stdout)
-
-        if pattern:
-            print("Connected Devices:")
-            print("-----------------------------------------")
-            print(f"{CYAN}IP Address\t\tMAC Address{RESET}")
-            print("-----------------------------------------")
-            for ip, mac in pattern:
-                devices.append((ip, mac))
-                print(f"{GREEN}{ip}\t{mac}{RESET}")
-
-    except Exception as e:
-        print(f"{RED}Error performing ARP scan: {e}{RESET}")
-    
-    return devices
-
-def network_scan(scan_ranges):
+def scan():
     """Scan the network for active hosts using ping."""
-    print("\n[INFO] Scanning network...\n")
-    print("----------------------------------------------------\n")
+    local_ip = get_local_ip()
+    if not local_ip:
+        print("Could not determine local IP address.")
+        return
+
+    scan_ranges = get_scan_range(local_ip)
+    if not scan_ranges:
+        print(f"Unsupported local IP range: {local_ip}")
+        return
 
     active_hosts = []
 
@@ -63,12 +35,5 @@ def network_scan(scan_ranges):
             result = future.result()
             if result:
                 active_hosts.append(result)
-
-    if active_hosts:
-        print("\nActive Hosts Found:")
-        print("---------------------------------")
-        print("\n".join(active_hosts))
-    else:
-        print("\nNo active hosts found.")
 
     return active_hosts
