@@ -1,34 +1,14 @@
 import random
+import banner_art  # Import banner file
 
-# List of banners to choose from
-banners = [
-    """
-      .----.        [ S C A  N ]        .------.
-     /  ▓▓  \      STEALTH MODE ON      /   ▓▓   \
-    |  ░░░░  |  ██▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓██  |  ░░░░  |
-    |  ░██░  |  ██░░░░░░░░░░░░░░░░░░██  |  ░██░  |
-    |  ░██░  |  ██░ SCANNING...   ░░██  |  ░██░  |
-    |  ░██░  |  ██░ Hosts Found:  ░░██  |  ░██░  |
-    |  ░██░  |  ██░ Extracting MAC░░██  |  ░██░  |
-    |  ░██░  |  ██░ Tracing Routes░░██  |  ░██░  |
-    |  ░██░  |  ██▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓██  |  ░██░  |
-    '--------'     [█]██████████[█]     '--------'
-    [  🔍  ]       [█████████████]      [  🔍  ]
-    [  🌐  ]        [███████████]       [  🌐  ]
-    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
-       NETWORK INFILTRATION IN PROGRESS...
-  
-    """,
-]
+# ANSI escape codes for colors
+colors = ["\033[31m", "\033[32m", "\033[33m", "\033[34m", "\033[35m", "\033[36m"]
+reset = "\033[0m"  # Reset color
+green = "\033[32m"  # Green color
 
 def Font_banner():
-    # ANSI escape codes for colors
-    colors = ["\033[31m", "\033[32m", "\033[33m", "\033[34m", "\033[35m", "\033[36m"]
-    reset = "\033[0m"  # Reset color
-    green = "\033[32m"  # Green color
     color = random.choice(colors)  # Pick a random color
-
-    banner = random.choice(banners)  # Pick a random banner
+    banner = banner_art.get_banner()  # Get a random banner
     print(f"{color}{banner}{reset}")
 
     # Display version & author at the bottom
