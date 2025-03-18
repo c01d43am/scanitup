@@ -1,5 +1,8 @@
 import random
-import banner_art  # Import banner file
+from . import banner_art
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # ANSI escape codes for colors
 colors = ["\033[31m", "\033[32m", "\033[33m", "\033[34m", "\033[35m", "\033[36m"]
