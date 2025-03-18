@@ -2,7 +2,7 @@
 import sys
 import time
 import subprocess
-from Main.Tool.Design.design import Font_banner
+from Main.Tools.Design.design import Font_banner
 from Main.Index.index import main as index_main
 #-----------------------------------------------------------------------------------------------------------------------------------------------
 # Function to display a loading animation
