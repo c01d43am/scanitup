@@ -1,11 +1,10 @@
-import subprocess
+# Import the required modules
+from Working.Tool.Design.design import Font_banner
+from Working.Index.index import main as index_main
 
 def main():
-    # Run design.py (Banner & Version Display)
-    subprocess.run(["python", "Design/design.py"], check=True)
-
-    # Run index.py (Main Menu)
-    subprocess.run(["python", "Index/index.py"], check=True)
+    Font_banner()  # Call banner display function first
+    index_main()   # Call index.py main function
 
 if __name__ == "__main__":
     main()

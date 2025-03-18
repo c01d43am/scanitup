@@ -1,8 +1,12 @@
 import sys
 import os
-from ..network_scanner.scanner import scan_network
-from ..network_scanner.device_info import get_device_info
-from ..network_scanner.output import display_results
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'Tool')))
+
+
+from ..Tool.network_scanner.scanner import scan_network
+from ..Tool.network_scanner.device_info import get_device_info
+from ..Tool.network_scanner.output import display_results
 
 def main():
 
