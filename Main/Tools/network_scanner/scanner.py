@@ -1,8 +1,11 @@
+#--------------------------------------------------------------------------------------------------------------------------------------------------------
 import platform
 import subprocess
 import ipaddress
 import sys
 import time
+import json
+from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 from Main.Tools.network_scanner.device_info import get_device_info
 
@@ -15,6 +18,21 @@ def get_local_ip():
     else:
         result = subprocess.run(["hostname", "-I"], capture_output=True, text=True)
         return result.stdout.strip().split()[0]
+
+def get_mac_address(ip):
+    """Get the MAC address of a given IP."""
+    system = platform.system()
+    if system == "Windows":
+        result = subprocess.run(["arp", "-a", ip], capture_output=True, text=True)
+        for line in result.stdout.split("\n"):
+            if ip in line:
+                return line.split()[1]
+    else:
+        result = subprocess.run(["arp", "-n", ip], capture_output=True, text=True)
+        for line in result.stdout.split("\n"):
+            if ip in line:
+                return line.split()[2]
+    return "Unknown"
 
 def get_cidr():
     """Determine network CIDR dynamically."""
@@ -46,13 +64,13 @@ def ping_host(ip):
     system = platform.system()
     cmd = ["ping", "-n", "1", ip] if system == "Windows" else ["ping", "-c", "1", ip]
     result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
-
+    
     if system == "Windows":
         return ip if "TTL=" in result.stdout else None
     else:
         return ip if "bytes from" in result.stdout else None
 
-def scan_network_live():
+def scan_network_live(silent_mode=False, output_file=None):
     """Perform a live scan and call device_info.py for details."""
     scan_range = calculate_cidr()
     if not scan_range:
@@ -62,7 +80,8 @@ def scan_network_live():
     found_devices = []
     scanned_count = 0
 
-    print("\n[🔍] Scanning network live... Press Ctrl+C to stop.\n")
+    if not silent_mode:
+        print("\n[🔍] Scanning network live... Press Ctrl+C to stop.\n")
     time.sleep(1)
 
     def worker(ip):
@@ -70,13 +89,17 @@ def scan_network_live():
         scanned_count += 1
         result = ping_host(ip)
         if result:
-            device_details = get_device_info(ip) 
+            device_details = get_device_info(ip)
+            device_details['mac'] = get_mac_address(ip)  # Retrieve MAC address
+            device_details['timestamp'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             found_devices.append(device_details)
-            print(f"\n[✅] Found: {device_details['ip']} | MAC: {device_details['mac']} | Name: {device_details['hostname']}")
-
-        sys.stdout.write(f"\r[⏳] Scanning... {scanned_count}/{total_ips} IPs checked")
-        sys.stdout.flush()
-
+            if not silent_mode:
+                print(f"\n[✅] Found: {device_details['ip']} | MAC: {device_details['mac']} | Name: {device_details['hostname']} | Time: {device_details['timestamp']}")
+        
+        if not silent_mode:
+            sys.stdout.write(f"\r[⏳] Scanning... {scanned_count}/{total_ips} IPs checked")
+            sys.stdout.flush()
+    
     with ThreadPoolExecutor(max_workers=50) as executor:
         futures = {executor.submit(worker, ip): ip for ip in scan_range}
         try:
@@ -84,14 +107,19 @@ def scan_network_live():
                 future.result()  # Wait for each thread to complete
         except KeyboardInterrupt:
             print("\n[⚠] Scan interrupted. Exiting...")
-
+    
     print("\n\n[✅] Scan Complete!")
     if found_devices:
         print("\n[🔎] Active Devices Found:")
         for device in found_devices:
-            print(f"  → {device['ip']} | MAC: {device['mac']} | Name: {device['hostname']}")
+            print(f"  → {device['ip']} | MAC: {device['mac']} | Name: {device['hostname']} | Time: {device['timestamp']}")
     else:
         print("\n[❌] No active devices found.")
+    
+    if output_file:
+        with open(output_file, "w") as f:
+            json.dump(found_devices, f, indent=4)
+        print(f"[💾] Scan results saved to {output_file}")
 
 if __name__ == "__main__":
-    scan_network_live()
+    scan_network_live(silent_mode=False, output_file="scan_results.json")
