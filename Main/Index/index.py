@@ -14,9 +14,9 @@ def main():
     while True:
         try:
             print("\n📡 Network Scanner - Main Menu")
-            print("1️⃣  Run Live Network Scan")
-            print("2️⃣  Show Connected Devices")
-            print("3️⃣  Exit")
+            print("1. Run Live Network Scan")
+            print("2. Show Connected Devices")
+            print("3️. Exit")
 
             choice = input("🔹 Enter your choice: ").strip()
 
