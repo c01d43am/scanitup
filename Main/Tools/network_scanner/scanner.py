@@ -1,11 +1,10 @@
 import platform
 import subprocess
-import threading
 import ipaddress
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
-import device_info  # Importing device_info.py
+from Main.Tools.network_scanner.device_info import get_device_info
 
 def get_local_ip():
     """Get the local IP address."""
@@ -63,7 +62,7 @@ def scan_network_live():
     found_devices = []
     scanned_count = 0
 
-    print("[🔍] Scanning network live... Press Ctrl+C to stop.\n")
+    print("\n[🔍] Scanning network live... Press Ctrl+C to stop.\n")
     time.sleep(1)
 
     def worker(ip):
@@ -71,9 +70,9 @@ def scan_network_live():
         scanned_count += 1
         result = ping_host(ip)
         if result:
-            device_details = device_info.get_device_info(ip)  # Call device_info.py
+            device_details = get_device_info(ip) 
             found_devices.append(device_details)
-            print(f"\r[✅] Found: {device_details['ip']} | MAC: {device_details['mac']} | Name: {device_details['hostname']}                      ")
+            print(f"\n[✅] Found: {device_details['ip']} | MAC: {device_details['mac']} | Name: {device_details['hostname']}")
 
         sys.stdout.write(f"\r[⏳] Scanning... {scanned_count}/{total_ips} IPs checked")
         sys.stdout.flush()
@@ -86,7 +85,7 @@ def scan_network_live():
         except KeyboardInterrupt:
             print("\n[⚠] Scan interrupted. Exiting...")
 
-    print("\n[✅] Scan Complete!")
+    print("\n\n[✅] Scan Complete!")
     if found_devices:
         print("\n[🔎] Active Devices Found:")
         for device in found_devices:

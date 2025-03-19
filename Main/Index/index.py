@@ -3,26 +3,26 @@ import os
 import random
 
 # Ensure correct module path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'Tool')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 # Use absolute imports
-from Tools.network_scanner.scanner import scan_network
-from Tools.network_scanner.device_info import get_device_info
-from Tools.network_scanner.output import display_results
+from Main.Tools.network_scanner.scanner import scan_network_live  #import scan_network_live from scanner.py
+from Main.Tools.network_scanner.device_info import get_device_info  #import get_device_info from device_info.py
+from Main.Tools.network_scanner.output import display_results   #import display_results from output.py
 
 def main():
     while True:
         try:
             print("\n📡 Network Scanner - Main Menu")
-            print("1️⃣  Run Network Scan")
+            print("1️⃣  Run Live Network Scan")
             print("2️⃣  Show Connected Devices")
             print("3️⃣  Exit")
 
             choice = input("🔹 Enter your choice: ").strip()
 
             if choice == "1":
-                print("\n🔍 Starting Network Scan...")
-                scan_results = scan_network()
+                print("\n🔍 Starting Live Network Scan...\n")
+                scan_results = scan_network_live()  # Fix function name
                 if not scan_results:
                     print("⚠ No active devices found.")
                 else:
@@ -31,7 +31,7 @@ def main():
 
             elif choice == "2":
                 print("\n📡 Connected Devices:")
-                scan_results = scan_network()
+                scan_results = scan_network_live()  # Fix function name
                 if not scan_results:
                     print("⚠ No connected devices found.")
                 else:

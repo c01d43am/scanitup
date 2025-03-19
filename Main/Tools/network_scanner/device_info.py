@@ -24,5 +24,7 @@ def reverse_dns(ip):
 def get_device_info(ip):
     """Return MAC, Hostname, and first seen time."""
     mac = get_mac(ip)
+    if isinstance(ip, list):
+        ip = ip[0]  # Ensure it's a string
     hostname = reverse_dns(ip)
     return {"ip": ip, "mac": mac, "hostname": hostname, "first_seen": time.strftime("%H:%M:%S")}
