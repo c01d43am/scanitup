@@ -101,6 +101,5 @@ Feel free to contribute! Fork the repo, create a new branch, and submit a pull r
 
 ### **🔗 Connect with Me**
 👤 **GitHub:** [@c01d43am](https://github.com/c01d43am)  
-💬 **Twitter:** [@yourhandle](#)  
-📧 **Email:** your.email@example.com  
+📧 **Email:** alugolupawan@gmail.com  
 
