@@ -16,7 +16,7 @@ def main():
             print("\n📡 Network Scanner - Main Menu")
             print("1. Run Live Network Scan")
             print("2. Show Connected Devices")
-            print("3️. Exit")
+            print("3. Exit")
 
             choice = input("🔹 Enter your choice: ").strip()
 

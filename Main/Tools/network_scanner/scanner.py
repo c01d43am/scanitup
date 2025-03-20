@@ -1,10 +1,10 @@
-#--------------------------------------------------------------------------------------------------------------------------------------------------------
 import platform
 import subprocess
 import ipaddress
 import sys
 import time
 import json
+import os
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 from Main.Tools.network_scanner.device_info import get_device_info
@@ -14,41 +14,48 @@ def get_local_ip():
     system = platform.system()
     if system == "Windows":
         result = subprocess.run(["ipconfig"], capture_output=True, text=True)
-        return next((line.split(":")[-1].strip() for line in result.stdout.split("\n") if "IPv4 Address" in line), None)
+        for line in result.stdout.split("\n"):
+            if "IPv4 Address" in line:
+                return line.split(":")[-1].strip()
     else:
         result = subprocess.run(["hostname", "-I"], capture_output=True, text=True)
-        return result.stdout.strip().split()[0]
+        return result.stdout.strip().split()[0] if result.stdout else None
 
 def get_mac_address(ip):
     """Get the MAC address of a given IP."""
     system = platform.system()
     if system == "Windows":
-        result = subprocess.run(["arp", "-a", ip], capture_output=True, text=True)
+        result = subprocess.run(["arp", "-a"], capture_output=True, text=True)
         for line in result.stdout.split("\n"):
             if ip in line:
-                return line.split()[1]
+                parts = line.split()
+                return parts[1] if len(parts) > 1 else "Unknown"
     else:
-        result = subprocess.run(["arp", "-n", ip], capture_output=True, text=True)
-        for line in result.stdout.split("\n"):
-            if ip in line:
-                return line.split()[2]
+        try:
+            result = subprocess.run(["arp-scan", "-l"], capture_output=True, text=True)
+            for line in result.stdout.split("\n"):
+                if ip in line:
+                    return line.split()[1]
+        except FileNotFoundError:
+            return "Install arp-scan"
     return "Unknown"
 
 def get_cidr():
     """Determine network CIDR dynamically."""
     system = platform.system()
     if system == "Windows":
-        result = subprocess.run(["ipconfig"], capture_output=True, text=True)
-        ip = next((line.split(":")[-1].strip() for line in result.stdout.split("\n") if "IPv4 Address" in line), None)
-        mask = next((line.split(":")[-1].strip() for line in result.stdout.split("\n") if "Subnet Mask" in line), None)
-        if ip and mask:
-            cidr = sum(bin(int(x)).count("1") for x in mask.split("."))
-            return f"{ip}/{cidr}"
+        result = subprocess.run(["netsh", "interface", "ip", "show", "addresses"], capture_output=True, text=True)
+        ip, mask = None, None
+        for line in result.stdout.split("\n"):
+            if "IP Address" in line:
+                ip = line.split(":")[-1].strip()
+            if "Subnet Prefix" in line:
+                mask = line.split()[2].strip().split('/')[-1]
+        return f"{ip}/{mask}" if ip and mask else None
     else:
         result = subprocess.run(["ip", "-o", "-f", "inet", "addr", "show"], capture_output=True, text=True)
         match = next((line.split()[3] for line in result.stdout.split("\n") if "inet" in line), None)
         return match
-    return None
 
 def calculate_cidr():
     """Generate IP list in the network range."""
@@ -63,12 +70,8 @@ def ping_host(ip):
     """Ping a host and check if it's online."""
     system = platform.system()
     cmd = ["ping", "-n", "1", ip] if system == "Windows" else ["ping", "-c", "1", ip]
-    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
-    
-    if system == "Windows":
-        return ip if "TTL=" in result.stdout else None
-    else:
-        return ip if "bytes from" in result.stdout else None
+    result = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return ip if result.returncode == 0 else None
 
 def scan_network_live(silent_mode=False, output_file=None):
     """Perform a live scan and call device_info.py for details."""
@@ -79,6 +82,7 @@ def scan_network_live(silent_mode=False, output_file=None):
     total_ips = len(scan_range)
     found_devices = []
     scanned_count = 0
+    max_workers = min(100, os.cpu_count() * 2)
 
     if not silent_mode:
         print("\n[🔍] Scanning network live... Press Ctrl+C to stop.\n")
@@ -90,7 +94,7 @@ def scan_network_live(silent_mode=False, output_file=None):
         result = ping_host(ip)
         if result:
             device_details = get_device_info(ip)
-            device_details['mac'] = get_mac_address(ip)  # Retrieve MAC address
+            device_details['mac'] = get_mac_address(ip)
             device_details['timestamp'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             found_devices.append(device_details)
             if not silent_mode:
@@ -100,11 +104,11 @@ def scan_network_live(silent_mode=False, output_file=None):
             sys.stdout.write(f"\r[⏳] Scanning... {scanned_count}/{total_ips} IPs checked")
             sys.stdout.flush()
     
-    with ThreadPoolExecutor(max_workers=50) as executor:
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {executor.submit(worker, ip): ip for ip in scan_range}
         try:
             for future in futures:
-                future.result()  # Wait for each thread to complete
+                future.result()
         except KeyboardInterrupt:
             print("\n[⚠] Scan interrupted. Exiting...")
     
